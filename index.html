@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Void Vigil: The Cinder Reach Crusade</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--bg:#0b0a09;--panel:#15120e;--panel2:#1e1913;--gold:#c9a24a;--gold2:#7d6328;--red:#a32020;--txt:#e6dcc6;--dim:#9c917b;--house:#c9a24a}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#1d1610,#060505 70%);color:var(--txt);font-family:Georgia,'Times New Roman',serif;min-height:100vh;font-size:15px}
+h1,h2,h3{font-family:'Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;color:var(--gold);letter-spacing:.08em;margin:.3em 0;font-weight:normal}
+h1{font-size:44px;text-shadow:0 0 18px rgba(201,162,74,.35)}
+button{font-family:inherit;background:linear-gradient(#2a2118,#16110c);color:var(--gold);border:1px solid var(--gold2);padding:7px 14px;cursor:pointer;font-size:14px;letter-spacing:.04em;margin:2px}
+button:hover:not(:disabled){border-color:var(--gold);color:#f3d68a;background:linear-gradient(#3a2c1c,#1d160f)}
+button:disabled{opacity:.38;cursor:default}
+button.red{color:#e98a8a;border-color:#6d1d1d}
+button.big{font-size:18px;padding:10px 26px}
+.screen{display:none;padding:12px 18px}
+.screen.active{display:block}
+.panel{background:linear-gradient(var(--panel2),var(--panel));border:1px solid #3b2f1c;box-shadow:inset 0 0 0 1px #000,0 4px 18px rgba(0,0,0,.6);padding:12px;margin-bottom:10px}
+.dim{color:var(--dim)} .gold{color:var(--gold)} .redt{color:#e06a6a} .grn{color:#8fc27a}
+.row{display:flex;gap:12px;align-items:flex-start}
+.topbar{display:flex;gap:18px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gold2);padding:6px 4px 8px;margin-bottom:10px}
+.topbar .stat{font-size:16px} .topbar .stat b{color:var(--gold)}
+.log{height:170px;overflow-y:auto;font-size:13px;line-height:1.35;background:#0c0a08;border:1px solid #2c2416;padding:6px}
+.log div{border-bottom:1px solid #1b160f;padding:1px 0}
+#title{text-align:center;padding-top:60px}
+#title .sigil{font-size:20px;color:var(--gold2);letter-spacing:.6em}
+.quote{font-style:italic;color:var(--dim);max-width:640px;margin:18px auto}
+.houses{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.house{width:250px;padding:14px;border:1px solid #3b2f1c;background:var(--panel);cursor:pointer;text-align:left}
+.house:hover{border-color:var(--gold)}
+.house.sel{border-color:#d9b46a;box-shadow:0 0 14px rgba(217,180,106,.4)}
+.chip{display:inline-block;width:10px;height:10px;border:1px solid #a8926a;transform:rotate(45deg);margin-right:4px;vertical-align:middle}
+select{font-family:inherit;background:#0c0a08;color:#e6dcc6;border:1px solid #7d6328;padding:3px}
+.house .sw{height:8px;margin:-14px -14px 10px}
+svg text{font-family:Georgia,serif}
+.sysinfo{min-height:200px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:50}
+.modal-bg.show{display:flex}
+.modal{max-width:560px;background:linear-gradient(#211a12,#120f0b);border:1px solid var(--gold);padding:20px 24px;box-shadow:0 0 40px #000}
+.modal p{line-height:1.5}
+canvas{display:block;border:1px solid var(--gold2);background:#0d0c0a}
+.unitcard{border:1px solid #3b2f1c;padding:8px;margin:4px 0;background:#110e0b;cursor:pointer}
+.unitcard.sel{border-color:var(--gold)}
+.unitcard .nm{color:var(--gold)}
+.bar{height:6px;background:#2a0d0d;margin-top:3px}.bar>i{display:block;height:100%;background:#9c2a2a}
+.xpbar>i{background:#b08a32}
+table.shop{width:100%;border-collapse:collapse;font-size:13.5px}
+table.shop td{padding:4px 6px;border-bottom:1px solid #241d13;vertical-align:middle}
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.tag{display:inline-block;border:1px solid var(--gold2);padding:0 5px;font-size:12px;margin-left:4px;color:var(--gold)}
+.small{font-size:12.5px}
+#bside{width:330px}
+.ab{width:100%;text-align:left}
+#tip{position:fixed;pointer-events:none;background:#000c;border:1px solid var(--gold2);padding:4px 8px;font-size:13px;display:none;z-index:40}
+</style>
+</head>
+<body>
+<div id="tip"></div>
+
+<div id="title" class="screen active">
+  <div class="sigil">◇ &nbsp; THE VIGIL DOES NOT SLEEP &nbsp; ◇</div>
+  <h1>VOID VIGIL</h1>
+  <h3 class="dim">The Cinder Reach Crusade</h3>
+  <p class="quote">The Cinder Reach is coming apart. Grakk warbands loot its edges, the iron Revenants march out of their ossuaries, and the Vorrid Swarm is gorging on its farming worlds. Worse, the Weeping Rift is widening at its heart, and the Ashen Choir sings to the fallen god inside it. You are a Vigil-Marshal of the Void Vigil, the ash-armoured crusaders sworn from eight great Houses. Lead your Cohort, cleanse the Reach, and silence the Choir.</p>
+  <div style="margin-top:26px">
+    <button class="big" id="btnNew">New Crusade</button>
+    <button class="big" id="btnContinue">Continue Crusade</button>
+  </div>
+  <p class="small dim" style="margin-top:40px">An original game. The setting, names and lore are all original. MIT License.</p>
+</div>
+
+<div id="houseSel" class="screen">
+  <div style="text-align:center"><h2>Swear the Vigil Oath</h2><p class="dim">Name your Vigil-Marshal and choose the House that raised him before he swore the Vigil oath. His House gives him a passive bonus for the whole crusade.</p>
+  <div style="margin:10px 0"><label class="gold">Vigil-Marshal&nbsp; <input id="capName" maxlength="28" value="Aurek Valdane" style="font-family:inherit;font-size:17px;background:#0c0a08;color:#e6dcc6;border:1px solid #7d6328;padding:6px 10px;width:280px"></label></div></div>
+  <div class="houses" id="houseList"></div>
+  <div style="text-align:center;margin-top:18px"><button id="btnBackTitle">Back</button> <button class="big" id="btnBegin" disabled>Begin the Crusade</button></div>
+</div>
+
+<div id="map" class="screen">
+  <div class="topbar">
+    <div class="stat"><b id="mHouse">Void Vigil</b> · Vigil-Marshal <span id="mCapt"></span></div>
+    <div class="stat">Campaign Turn <b id="mTurn"></b> / <span id="mMaxTurn"></span></div>
+    <div class="stat">Supply <b id="mReq"></b> <span class="dim">(+<span id="mInc"></span>/turn)</span></div>
+    <div class="stat">Systems <b id="mSys"></b></div>
+    <div>
+      <button id="btnArmoury">Armoury</button>
+      <button id="btnHold">Hold Position (End Turn)</button>
+      <button id="btnSave">Save</button>
+      <button id="btnMenu">Menu</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="panel" style="flex:1;padding:4px">
+      <svg id="starmap" viewBox="0 0 1040 620" style="width:100%;height:auto;display:block"></svg>
+    </div>
+    <div style="width:340px">
+      <div class="panel sysinfo" id="sysInfo"></div>
+      <div class="panel"><h3>Objective</h3><div class="small" id="objText"></div></div>
+      <div class="panel"><h3>Sector Log</h3><div class="log" id="mapLog"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="battle" class="screen">
+  <div class="topbar">
+    <div class="stat"><b id="bTitle">Battle</b></div>
+    <div class="stat">Round <b id="bRound"></b></div>
+    <div class="stat" id="bPhase"></div>
+  </div>
+  <div class="row">
+    <div>
+      <canvas id="bcanvas" width="640" height="512"></canvas>
+      <div class="small dim" style="margin-top:6px;max-width:640px">Click one of your Sworn to select him. Blue tiles show where he can move. Click an enemy to shoot it, or to fight it in melee if he's standing next to it. Ruins (brown) give cover and block movement. Pillars (grey) block movement and line of sight. Each Sworn can move once and act once per round, in either order.</div>
+    </div>
+    <div id="bside">
+      <div class="panel" id="bUnit" style="min-height:190px"></div>
+      <div class="panel">
+        <button id="btnAbility" class="ab">Ability</button>
+        <button id="btnOrbital" class="ab">Orbital Lance Strike</button>
+        <button id="btnEndTurn" class="ab">End Turn</button>
+        <button id="btnAmmo" class="ab">Munitions</button>
+        <button id="btnRetreat" class="ab red">Withdraw (lose battle)</button>
+      </div>
+      <div class="panel"><div class="log" id="bLog" style="height:210px"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="screen">
+  <div class="panel" style="max-width:760px;margin:20px auto">
+    <h2 id="rTitle"></h2>
+    <div id="rBody"></div>
+    <div style="margin-top:14px"><button class="big" id="btnToArmoury">Proceed to the Armoury</button></div>
+  </div>
+</div>
+
+<div id="shop" class="screen">
+  <div class="topbar">
+    <div class="stat"><b>Armoury of the Vigil-ship <i>Unbowed</i></b></div>
+    <div class="stat">Supply <b id="sReq"></b></div>
+    <div><button class="big" id="btnShopDone">Return to Sector Map</button></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>Cohort</h3><div id="sRoster"></div><h3 style="margin-top:12px">Armament Stores</h3><div class="small dim">Equip owned gear on the selected Sworn. Gear he's replacing goes back to the stores.</div><div id="sInv"></div></div>
+    <div class="panel"><h3>Forge Orders</h3><table class="shop" id="sWargear"></table><h3 style="margin-top:12px">Munitions</h3><div class="small dim">Unlock once, then pick it per Sworn for any slug weapon (Hand Cannon, Vigil Carbine, Twin Carbine, Rotary Cannon). You can also switch rounds mid-battle.</div><table class="shop" id="sAmmo"></table></div>
+    <div class="panel"><h3>Reinforcements &amp; Infirmary</h3><table class="shop" id="sRecruit"></table>
+      <h3 style="margin-top:12px">Vigil-ship Refits</h3><table class="shop" id="sShip"></table>
+      <h3 style="margin-top:12px">Ledger of Ashes</h3><div class="small dim" id="sFallen"></div></div>
+  </div>
+</div>
+
+<div id="ending" class="screen" style="text-align:center;padding-top:60px">
+  <h1 id="eTitle"></h1>
+  <p class="quote" id="eText" style="font-size:17px"></p>
+  <div id="eStats" class="dim"></div>
+  <button class="big" id="btnEndMenu" style="margin-top:24px">Return to Title</button>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal"><h2 id="modalTitle"></h2><div id="modalText"></div><div id="modalBtns" style="margin-top:14px;text-align:right"></div></div></div>
+<script>
+'use strict';
+/* ================= DATA ================= */
+const SAVE_KEY='voidVigil.cinderReach.save.v1';
+const MAX_TURNS=40;
+const MAX_ROSTER=5;
+const HOUSES={
+  aurelan:{name:'House Aurelan',color:'#2f8f8a',acc:5,bonus:'Measured Discipline: +5% hit chance with every attack.'},
+  carrow:{name:'House Carrow',color:'#8a2a52',melee:2,bonus:'Crimson Fervour: +2 melee damage.'},
+  veyle:{name:'House Veyle',color:'#5a4a8a',armor:1,bonus:'Iron Oath: +1 armour.'},
+  rimeholt:{name:'House Rimeholt',color:'#9aa6b4',meleeAcc:15,hp:2,bonus:'Frostborn Hunters: +15% melee hit chance, +2 max HP.'},
+  bastian:{name:'House Bastian',color:'#c46a1c',heavyAcc:15,bonus:'Wallbreakers: +15% hit chance with heavy weapons (Rotary Cannon, Beam Cannon).'},
+  pyrrhan:{name:'House Pyrrhan',color:'#c8402a',flameDmg:2,bonus:'Cinder-tempered: +2 damage with Pyre Casters and Cinder Rounds.'},
+  kestral:{name:'House Kestral',color:'#d9cf9a',move:1,bonus:'Windriders: +1 movement.'},
+  umbrael:{name:'House Umbrael',color:'#4a5a4a',stealth:true,bonus:'Veilwalkers: enemies get -30% to hit him in rounds 1 and 2.'}
+};
+const H_KEYS=Object.keys(HOUSES);
+const ALIEN=new Set(['horde','revenants','swarm']);
+const NAMES={def:['Varro','Cassiel','Tiberon','Gaius','Lysan','Octavian','Seveen','Marius','Antaro','Decimus','Quintus','Aurelian','Corvane','Seraphus','Vitrian','Leandros','Galen','Hektor','Silvanus','Brennus','Castell','Domitian','Malchor','Theron','Idris','Kastor','Ezrah','Davor'],
+  rimeholt:['Ulfgar','Haldor','Sven','Torvald','Ragnulf','Egil','Kjell','Orm','Asgeir','Hrothgar','Leif','Vali','Bragi'],
+  kestral:['Temur','Batu','Qaidu','Jochi','Orda','Sartak','Kerei','Arslan','Toghan'],
+  pyrrhan:["Dakor","Ezekar","Hal'vor","Joran","Nkosi","Barek","Tavu"]};
+const AMMO={
+  standard:{name:'Standard Slugs',desc:'Standard explosive-tipped slugs.',cost:0},
+  sabot:{name:'Sabot Rounds',ap:2,range:1,cost:60,desc:'Dense-core penetrators: +2 AP, +1 range.'},
+  overcharge:{name:'Overcharged Rounds',dmg:2,acc:-10,cost:70,desc:'Volatile hot-loaded charges: +2 damage, -10% hit chance.'},
+  cinder:{name:'Cinder Rounds',ignoreCover:true,cost:50,desc:'Burst into clinging embers: ignores cover.'}
+};
+const PERKS={
+  ward_crown:{name:'Warding Crown',desc:'+1 armour and +3 max HP.'},
+  blademaster:{name:'Blademaster',desc:'+2 melee damage and +10% melee hit chance.'},
+  marksman:{name:'Master Marksman',desc:'+10% ranged hit chance and +1 range.'},
+  inspiring:{name:'Inspiring Presence',desc:'Oath of Fury gives +20% hit (instead of +15%) and recharges 1 round faster.'},
+  tactician:{name:'Fleet Tactician',desc:'+1 movement for the Marshal.'},
+  purifier:{name:'Bane of the Unclean',desc:'+2 extra damage against the Grakk Horde, Revenants and Vorrid Swarm.'},
+  unyielding:{name:'Unyielding',desc:'Once per battle, a blow that would strike him down leaves him at 1 HP instead.'},
+  quartermaster:{name:'Concord Patronage',desc:'+15 Supply every campaign turn.'},
+  veteran:{name:'Mentor of the Vigil',desc:'Every member of the Cohort gains 25% more XP.'}
+};
+const W={
+  hand_cannon:{name:'Hand Cannon',slot:'ranged',slug:true,range:4,dmg:3,ap:0,acc:0,cost:15,desc:'Rng 4 · Dmg 3'},
+  carbine:{name:'Vigil Carbine',slot:'ranged',slug:true,range:6,dmg:3,ap:0,acc:0,cost:25,desc:'Rng 6 · Dmg 3'},
+  twin_carbine:{name:'Twin Carbine',slot:'ranged',slug:true,range:6,dmg:4,ap:0,acc:0,cost:55,desc:'Rng 6 · Dmg 4'},
+  arc_pistol:{name:'Arc Pistol',slot:'ranged',range:4,dmg:5,ap:2,acc:0,cost:50,desc:'Rng 4 · Dmg 5 · AP 2'},
+  arc_rifle:{name:'Arc Rifle',slot:'ranged',range:6,dmg:5,ap:2,acc:0,cost:80,desc:'Rng 6 · Dmg 5 · AP 2'},
+  rotary_cannon:{name:'Rotary Cannon',slot:'ranged',slug:true,heavy:true,range:8,dmg:4,ap:1,acc:-5,cost:60,desc:'Rng 8 · Dmg 4 · AP 1 · -5% hit'},
+  beam_cannon:{name:'Beam Cannon',slot:'ranged',heavy:true,range:9,dmg:8,ap:3,acc:-10,cost:120,desc:'Rng 9 · Dmg 8 · AP 3 · -10% hit'},
+  pyre_caster:{name:'Pyre Caster',slot:'ranged',flame:true,range:3,dmg:4,ap:0,acc:20,cost:45,desc:'Rng 3 · Dmg 4 · +20% hit · ignores cover'},
+  combat_knife:{name:'Combat Knife',slot:'melee',dmg:3,ap:0,acc:0,cost:0,desc:'Dmg 3'},
+  rip_saber:{name:'Rip-Saber',slot:'melee',dmg:4,ap:0,acc:0,cost:20,desc:'Dmg 4'},
+  seer_staff:{name:"Oracle's Staff",slot:'melee',dmg:4,ap:1,acc:0,cost:40,desc:'Dmg 4 · AP 1'},
+  charged_blade:{name:'Charged Blade',slot:'melee',dmg:5,ap:2,acc:0,cost:60,desc:'Dmg 5 · AP 2'},
+  quake_maul:{name:'Quake Maul',slot:'melee',dmg:8,ap:3,acc:-10,cost:120,desc:'Dmg 8 · AP 3 · -10% hit'},
+  relic_blade:{name:'Oathblade of the Martyr Ivona',slot:'melee',dmg:7,ap:3,acc:5,cost:0,noSale:true,desc:'Dmg 7 · AP 3 · +5% hit'},
+  vigil_plate:{name:'Vigil Plate',slot:'armour',armor:0,hp:0,move:0,cost:0,desc:'Standard-issue crusader plate'},
+  masterwork_plate:{name:'Masterwork Plate',slot:'armour',armor:1,hp:2,move:0,cost:90,desc:'+1 Armour · +2 HP'},
+  bulwark_frame:{name:'Bulwark Exo-Frame',slot:'armour',armor:2,hp:6,move:-1,cost:150,desc:'+2 Armour · +6 HP · -1 Move'},
+  aegis_shield:{name:'Aegis Shield',slot:'shield',armor:1,hp:2,move:0,cost:60,desc:'+1 Armour · +2 HP'},
+  none_shield:{name:'(none)',slot:'shield',armor:0,hp:0,move:0,cost:0,desc:''}
+};
+const SHOP_ITEMS=['carbine','twin_carbine','pyre_caster','arc_pistol','arc_rifle','rotary_cannon','beam_cannon','rip_saber','charged_blade','quake_maul','masterwork_plate','bulwark_frame','aegis_shield'];
+const CLASSES={
+  marshal:{name:'Vigil-Marshal',letter:'M',hp:14,armor:2,move:4,acc:75,ranged:'hand_cannon',melee:'rip_saber',ability:'fury',cost:0},
+  vanguard:{name:'Vanguard',letter:'V',hp:10,armor:2,move:4,acc:70,ranged:'carbine',melee:'combat_knife',ability:'frag',cost:60},
+  breacher:{name:'Breacher',letter:'B',hp:10,armor:2,move:3,acc:70,ranged:'rotary_cannon',melee:'combat_knife',ability:'rocket',cost:85},
+  surgeon:{name:'Field Surgeon',letter:'S',hp:10,armor:2,move:4,acc:70,ranged:'hand_cannon',melee:'rip_saber',ability:'mend',cost:80},
+  oracle:{name:'Void Oracle',letter:'O',hp:11,armor:2,move:4,acc:75,ranged:'hand_cannon',melee:'seer_staff',ability:'voidlash',cost:120}
+};
+const ABIL={
+  fury:{name:'Oath of Fury',cd:3,target:'self',desc:'Every Sworn gets +15% hit and +1 damage until the end of this round.'},
+  frag:{name:'Frag Charge',cd:3,target:'tile',range:4,desc:'Hits every enemy in a 3x3 area for 3 damage, ignoring armour. Range 4.'},
+  rocket:{name:'Breach Rocket',cd:3,target:'enemy',range:8,desc:'Fires a rocket at an enemy in range 8 and line of sight: Dmg 7, AP 3.'},
+  mend:{name:'Suture Kit',cd:2,target:'ally',range:1,desc:'Heals 6 HP on himself or an adjacent Sworn.'},
+  voidlash:{name:'Void Lash',cd:2,target:'enemy',range:6,desc:'A lash of raw void at range 6 that always hits: 5 damage, ignoring armour.'}
+};
+const ENEMY={
+  grk_thrall:{name:'Grakk Thrall',f:'horde',l:'t',hp:8,armor:0,move:4,acc:45,range:4,rdmg:2,rap:0,mdmg:4,map:0,pts:1,ai:'melee'},
+  grk_slinger:{name:'Grakk Slinger',f:'horde',l:'s',hp:8,armor:0,move:4,acc:40,range:5,rdmg:3,rap:0,mdmg:3,map:0,pts:1,ai:'ranged'},
+  grk_bruiser:{name:'Grakk Bruiser',f:'horde',l:'B',hp:16,armor:1,move:4,acc:45,range:3,rdmg:2,rap:0,mdmg:6,map:1,pts:3,ai:'melee'},
+  grk_overlord:{name:'Grakk Overlord',f:'horde',l:'O',hp:24,armor:2,move:4,acc:50,range:4,rdmg:3,rap:0,mdmg:8,map:2,pts:6,ai:'melee'},
+  rev_husk:{name:'Revenant Husk',f:'revenants',l:'h',hp:8,armor:2,move:3,acc:60,range:6,rdmg:3,rap:1,mdmg:2,map:0,pts:2,ai:'ranged',reanimate:true},
+  rev_sentinel:{name:'Revenant Sentinel',f:'revenants',l:'S',hp:11,armor:3,move:3,acc:65,range:6,rdmg:4,rap:1,mdmg:3,map:0,pts:3,ai:'ranged',reanimate:true},
+  rev_gravewarden:{name:'Gravewarden',f:'revenants',l:'G',hp:14,armor:3,move:4,acc:60,range:0,rdmg:0,rap:0,mdmg:6,map:2,pts:4,ai:'melee',reanimate:true},
+  vor_spitter:{name:'Spitter Drone',f:'swarm',l:'d',hp:5,armor:0,move:5,acc:45,range:4,rdmg:2,rap:0,mdmg:2,map:0,pts:.75,ai:'ranged'},
+  vor_skitter:{name:'Skitterling',f:'swarm',l:'k',hp:6,armor:0,move:6,acc:50,range:0,rdmg:0,rap:0,mdmg:3,map:0,pts:.75,ai:'melee'},
+  vor_stalker:{name:'Brood Stalker',f:'swarm',l:'R',hp:14,armor:1,move:5,acc:55,range:5,rdmg:3,rap:0,mdmg:5,map:1,pts:3,ai:'melee'},
+  vor_colossus:{name:'Brood Colossus',f:'swarm',l:'X',hp:26,armor:3,move:4,acc:50,range:0,rdmg:0,rap:0,mdmg:9,map:2,pts:6,ai:'melee'},
+  ach_zealot:{name:'Choir Zealot',f:'choir',l:'z',hp:6,armor:0,move:4,acc:45,range:5,rdmg:2,rap:0,mdmg:2,map:0,pts:.75,ai:'ranged'},
+  ach_oathbreaker:{name:'Oathbreaker Knight',f:'choir',l:'K',hp:11,armor:2,move:4,acc:65,range:6,rdmg:3,rap:0,mdmg:4,map:0,pts:2.5,ai:'ranged'},
+  ach_flayed:{name:'Flayed Penitent',f:'choir',l:'F',hp:12,armor:2,move:5,acc:60,range:0,rdmg:0,rap:0,mdmg:6,map:1,pts:3,ai:'melee'},
+  ach_hexer:{name:'Choir Hexer',f:'choir',l:'H',hp:10,armor:1,move:4,acc:60,range:6,rdmg:3,rap:0,mdmg:3,map:0,pts:3.5,ai:'ranged',hexer:true},
+  fallen_god:{name:"Vhar'kul the Unmade",f:'choir',l:'U',hp:38,armor:3,move:5,acc:65,range:0,rdmg:0,rap:0,mdmg:9,map:2,pts:99,ai:'melee',hexer:true,boss:true}
+};
+const FACTIONS={
+  concord:{name:'Concord',color:'#c9a24a'},
+  unclaimed:{name:'Unclaimed',color:'#6b6558'},
+  horde:{name:'Grakk Horde',color:'#4f9a2e',roster:[['grk_thrall',5],['grk_slinger',3],['grk_bruiser',2,2],['grk_overlord',1,4]]},
+  revenants:{name:'Revenants',color:'#5fd6b0',roster:[['rev_husk',5],['rev_sentinel',3,2],['rev_gravewarden',2,3]]},
+  swarm:{name:'Vorrid Swarm',color:'#a456c8',roster:[['vor_spitter',5],['vor_skitter',5],['vor_stalker',2,2],['vor_colossus',1,4]]},
+  choir:{name:'Ashen Choir',color:'#d0342c',roster:[['ach_zealot',5],['ach_oathbreaker',3,2],['ach_flayed',2,3],['ach_hexer',1,2]]}
+};
+const SYSTEMS0=[
+ {n:"Bastion Kepler",x:80,y:320,o:'concord',t:0,v:20,home:true,f:'The anchorage of your vigil-ship, a cold fortress-station whose halls echo with the hymns of a million pilgrims. If it falls, the crusade falls with it.'},
+ {n:'Hesperax Prime',x:230,y:160,o:'unclaimed',t:0,v:15,r:{type:'recruit',cls:'vanguard'},f:'A city-world whose governor drowned in his own decadence. Its undercity gangs are hardy enough to swear the Vigil oath.'},
+ {n:"Varn's Drift",x:240,y:470,o:'horde',t:1,v:12,r:{type:'req',amt:40},f:'A scrapyard asteroid belt where Grakk scrap-smiths hammer together crude warships and bellow for a fight.'},
+ {n:'Ostracan Forge',x:390,y:80,o:'unclaimed',t:0,v:15,r:{type:'item',item:'arc_rifle'},f:'A foundry world cut off for a century. Its smith-guilds will give an arc rifle to whoever breaks the blockade.'},
+ {n:'Sepulchre of Zanthos',x:400,y:300,o:'revenants',t:2,v:15,r:{type:'req',amt:60},f:'Beneath the dunes, the iron dead stir. Rows of corroded husks drag themselves out of their burial vaults, pale fire guttering behind their visors.'},
+ {n:'Thule',x:380,y:530,o:'swarm',t:1,v:18,r:{type:'req',amt:40},f:'A farming world whose skies have turned violet with spores. The Vorrid Swarm has started to feed.'},
+ {n:"Gorgrot's Hollow",x:570,y:450,o:'horde',t:3,v:15,r:{type:'item',item:'quake_maul'},f:'Overlord Gorgrot has made a fortress out of a hollowed moon. Somewhere in his trophy pile is an ancient quake maul.'},
+ {n:"Ivona's Reach",x:560,y:180,o:'choir',t:2,v:15,r:{type:'item',item:'relic_blade'},f:"A pilgrim world defiled by the Ashen Choir. The martyr Ivona's oathblade still rests in the cathedral, guarded by zealots."},
+ {n:'Morvenn Relay',x:710,y:80,o:'choir',t:2,v:12,r:{type:'seer'},f:'A signal relay overrun by a hexer-coven. The Void Oracles of the Vigil can only reach the region if it is reclaimed.'},
+ {n:'Ghast Spires',x:720,y:560,o:'swarm',t:3,v:25,r:{type:'req',amt:90},f:'A dying spire city smothered in pulsing brood-growth. Its billions are nothing but feed now. The Swarm is watching.'},
+ {n:'Kheth Ossuary',x:720,y:320,o:'revenants',t:4,v:18,r:{type:'item',item:'bulwark_frame'},f:'The iron kings of Kheth are fully awake. Within their vaults lies a Bulwark Exo-Frame taken from a fallen crusade long ago.'},
+ {n:'Brimstone Gate',x:870,y:180,o:'choir',t:4,v:15,r:{type:'req',amt:100},f:'A fortified rift-gate where the Choir sings its endless dirge. Reality thins here.'},
+ {n:'Howling Verge',x:870,y:470,o:'horde',t:4,v:15,r:{type:'req',amt:100},f:'A great Blood-Howl is gathering at the edge of the Rift, bringing thousands of Grakk together in one roaring horde.'},
+ {n:'The Weeping Citadel',x:975,y:320,o:'choir',t:5,v:0,final:true,r:{type:'final'},f:"Vhar'kul the Unmade, a god who fell and rotted, rules from a citadel of bone and brass at the heart of the Weeping Rift. Slay him and the Rift seals. If you fail, the Cinder Reach is lost to the dark."}
+];
+const LANES=[[0,1],[0,2],[1,3],[1,4],[2,4],[2,5],[3,7],[4,7],[4,6],[5,6],[5,9],[6,10],[7,8],[7,10],[8,11],[10,11],[10,12],[6,9],[9,12],[11,13],[12,13],[3,8]];
+const SHIP={
+  engines:{name:'Void Drives',max:3,costs:[0,90,170],desc:'The Cohort can jump +1 system per turn (through Concord space).'},
+  levy:{name:'Concord Levies',max:3,costs:[70,140,210],desc:'+5 Supply per turn for every Concord system.'},
+  defenses:{name:'Orbital Defence Platforms',max:3,costs:[60,120,180],desc:'+20% chance for systems to beat off enemy counterattacks.'},
+  lance:{name:'Lance Battery Refit',max:1,costs:[120],desc:'Once per battle, call an orbital lance strike on any 3x3 area (5 damage, ignoring armour).'}
+};
+/* ================= UTIL ================= */
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+const pick=a=>a[rnd(a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const FAST={on:false};
+const sleep=ms=>new Promise(r=>setTimeout(r,FAST.on?0:ms));
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');$('tip').style.display='none';}
+function modal(title,html,buttons){
+  $('modalTitle').textContent=title;$('modalText').innerHTML=html;const b=$('modalBtns');b.innerHTML='';
+  (buttons||[{t:'Continue'}]).forEach(btn=>{const e=document.createElement('button');e.textContent=btn.t;e.onclick=()=>{$('modalBg').classList.remove('show');btn.f&&btn.f();};b.appendChild(e);});
+  $('modalBg').classList.add('show');
+}
+
+/* ================= STATE ================= */
+let G=null; // campaign state
+let B=null; // battle state
+function newName(ch){const pool=NAMES[ch]||NAMES.def;const used=new Set(G.roster.map(u=>u.name));let n,tries=0;do{n='Sworn '+pick(pool);tries++;}while(used.has(n)&&tries<30);return n;}
+function randHouse(){const counts={};G.roster.forEach(u=>counts[u.house]=(counts[u.house]||0)+1);const free=H_KEYS.filter(k=>!counts[k]);return pick(free.length?free:H_KEYS);}
+function makeUnit(cls,name,house){const c=CLASSES[cls];house=house||randHouse();const u={id:G.nextId++,cls,house,name:name||newName(house),lvl:1,xp:0,kills:0,ranged:c.ranged,melee:c.melee,armour:'vigil_plate',shield:'none_shield',ammo:'standard'};u.hp=stats(u).maxHp;return u;}
+function perkCount(k){return G&&G.perks?G.perks.filter(p=>p===k).length:0;}
+function stats(u){const c=CLASSES[u.cls],ch=HOUSES[u.house]||{};const a=W[u.armour],s=W[u.shield];const cap=u.cls==='marshal';const has=k=>cap?perkCount(k):0;
+  return{maxHp:c.hp+(u.lvl-1)*2+a.hp+s.hp+(ch.hp||0)+3*has('ward_crown'),armor:c.armor+(ch.armor||0)+a.armor+s.armor+has('ward_crown'),
+    move:Math.max(2,c.move+(ch.move||0)+a.move+has('tactician')),acc:c.acc+(u.lvl-1)*3+(ch.acc||0),
+    meleeAcc:(ch.meleeAcc||0)+10*has('blademaster'),rangedAcc:10*has('marksman'),rangeBonus:has('marksman'),
+    meleeBonus:(ch.melee||0)+Math.floor((u.lvl-1)/2)+2*has('blademaster'),heavyAcc:ch.heavyAcc||0,flameDmg:ch.flameDmg||0,stealth:!!ch.stealth,alienDmg:1+2*has('purifier')};}
+function xpNeeded(u){return 25*u.lvl;}
+function newCampaign(capName,chId){
+  G={marshalName:capName,marshalHouse:chId,perks:[],pendingPerks:0,ammo:['standard'],turn:1,req:120,nextId:1,roster:[],inv:[],fallen:[],ship:{engines:1,levy:0,defenses:0,lance:0},seer:false,loc:0,log:[],battlesWon:0,battlesLost:0,kills:0,over:false};
+  G.systems=SYSTEMS0.map(s=>({...s,r:s.r?{...s.r}:null,claimed:false}));
+  const capt=makeUnit('marshal','Marshal '+capName,chId);G.roster.push(capt);
+  G.roster.push(makeUnit('vanguard'));G.roster.push(makeUnit('vanguard'));G.roster.push(makeUnit('surgeon'));
+  addLog(`The Cohort of ${capName} drops out of the void into the Cinder Reach under the Concord's writ. Vigil-Marshal ${capName} (${HOUSES[chId].name}) takes command.`);
+  save();
+}
+function addLog(t){G.log.unshift(`[T${G.turn}] ${t}`);G.log=G.log.slice(0,80);}
+function save(){if(G&&!G.over)try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){}}
+function load(){try{const s=localStorage.getItem(SAVE_KEY);if(!s)return false;G=JSON.parse(s);return !!G&&!G.over;}catch(e){return false;}}
+function neighbors(i){const r=[];LANES.forEach(([a,b])=>{if(a===i)r.push(b);if(b===i)r.push(a);});return r;}
+function income(){let inc=0,cnt=0;G.systems.forEach(s=>{if(s.o==='concord'){inc+=s.v;cnt++;}});inc+=cnt*5*G.ship.levy+15*perkCount('quartermaster');return Math.round(inc);}
+function reachable(){const res=new Map();const q=[[G.loc,0]];const seen=new Set([G.loc]);
+  while(q.length){const [i,d]=q.shift();if(d>=G.ship.engines)continue;for(const n of neighbors(i)){if(seen.has(n))continue;seen.add(n);res.set(n,d+1);if(G.systems[n].o==='concord')q.push([n,d+1]);}}
+  return res;}
+
+/* ================= TITLE / HOUSE ================= */
+function refreshTitle(){$('btnContinue').disabled=!localStorage.getItem(SAVE_KEY);}
+$('btnNew').onclick=()=>{buildHouses();show('houseSel');};
+$('btnContinue').onclick=()=>{if(load()){selSys=null;show('map');renderMap();}else{refreshTitle();}};
+$('btnBackTitle').onclick=()=>{show('title');refreshTitle();};
+let pickedCh=null;
+function buildHouses(){const el=$('houseList');el.innerHTML='';pickedCh=null;$('btnBegin').disabled=true;
+  for(const [id,c] of Object.entries(HOUSES)){const d=document.createElement('div');d.className='house';d.dataset.house=id;
+    d.innerHTML=`<div class="sw" style="background:linear-gradient(90deg,${c.color},#15120e)"></div><h3 style="color:#e6d3a8">${c.name}</h3><div class="small">${c.bonus}</div>`;
+    d.onclick=()=>{pickedCh=id;el.querySelectorAll('.house').forEach(x=>x.classList.toggle('sel',x===d));$('btnBegin').disabled=false;};
+    el.appendChild(d);}}
+$('btnBegin').onclick=()=>{if(!pickedCh)return;const nm=($('capName').value||'').trim().replace(/\s+/g,' ').slice(0,28)||'Aurek Valdane';
+  newCampaign(nm,pickedCh);selSys=null;show('map');renderMap();
+  modal('The Vigil Begins',`<p>Vigil-Marshal ${esc(nm)}, son of ${HOUSES[pickedCh].name}: the Concord has given your Cohort the Cinder Reach. Take systems to raise Supply, arm your Sworn in the Armoury, and push through to <b class="gold">The Weeping Citadel</b> to slay Vhar'kul the Unmade before turn ${MAX_TURNS}.</p><p class="dim">Each Sworn keeps his House's gifts. The Vigil was founded to hunt the unclean things of the void, so your Cohort deals +1 damage to the Grakk Horde, Revenants and Vorrid Swarm. Click a system next to your Cohort (the bronze marker) to deploy. Don't lose Bastion Kepler.</p>`);};
+
+/* ================= MAP ================= */
+let selSys=null;
+function renderMap(){
+  const svg=$('starmap');const reach=reachable();let h='';
+  h+=`<defs><radialGradient id="neb" cx="85%" cy="50%" r="35%"><stop offset="0" stop-color="#6a1030" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>`;
+  h+=`<rect width="1040" height="620" fill="#07070a"/><rect width="1040" height="620" fill="url(#neb)"/>`;
+  let seed=7;const sr=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  for(let i=0;i<140;i++)h+=`<circle cx="${(sr()*1040).toFixed(1)}" cy="${(sr()*620).toFixed(1)}" r="${(sr()*1.3+.2).toFixed(2)}" fill="#cfc6b0" opacity="${(sr()*.6+.2).toFixed(2)}"/>`;
+  LANES.forEach(([a,b])=>{const A=G.systems[a],Bs=G.systems[b];const imp=A.o==='concord'&&Bs.o==='concord';
+    h+=`<line x1="${A.x}" y1="${A.y}" x2="${Bs.x}" y2="${Bs.y}" stroke="${imp?'#8a6d2b':'#3a3a44'}" stroke-width="${imp?2.5:1.5}" stroke-dasharray="${imp?'':'5 5'}"/>`;});
+  G.systems.forEach((s,i)=>{const col=FACTIONS[s.o].color;const r=s.final?22:s.home?18:15;const can=reach.has(i);
+    if(can)h+=`<circle cx="${s.x}" cy="${s.y}" r="${r+8}" fill="none" stroke="#c9a24a" stroke-width="1.5" stroke-dasharray="3 3" opacity=".9"><animate attributeName="r" values="${r+6};${r+10};${r+6}" dur="2s" repeatCount="indefinite"/></circle>`;
+    if(selSys===i)h+=`<circle cx="${s.x}" cy="${s.y}" r="${r+5}" fill="none" stroke="#fff" stroke-width="2"/>`;
+    h+=`<g class="sys" data-i="${i}" style="cursor:pointer"><circle cx="${s.x}" cy="${s.y}" r="${r}" fill="${col}" fill-opacity=".85" stroke="#000" stroke-width="2"/>`;
+    if(s.final)h+=`<circle cx="${s.x}" cy="${s.y}" r="${r-7}" fill="#300" stroke="#ff6040"/>`;
+    if(s.o==='concord')h+=`<text x="${s.x}" y="${s.y+5}" text-anchor="middle" font-size="15" fill="#2a1d05">◇</text>`;
+    let pips='';for(let k=0;k<s.t;k++)pips+='◆';
+    h+=`<text x="${s.x}" y="${s.y+r+16}" text-anchor="middle" font-size="13" fill="#e6dcc6">${esc(s.n)}</text>`;
+    if(s.t>0&&s.o!=='concord')h+=`<text x="${s.x}" y="${s.y-r-6}" text-anchor="middle" font-size="11" fill="${col}">${pips}</text>`;
+    h+=`<circle cx="${s.x}" cy="${s.y}" r="${r+10}" fill="transparent"/></g>`;});
+  const L=G.systems[G.loc];
+  h+=`<g transform="translate(${L.x-12},${L.y-52})" pointer-events="none"><path d="M12 28 L0 10 L6 0 L18 0 L24 10 Z" fill="#1c1f26" stroke="#d9b46a" stroke-width="2"/><circle cx="12" cy="9" r="3" fill="#d9b46a"/></g>`;
+  h+=`<g font-size="12" fill="#cfc6b0">${Object.entries(FACTIONS).map(([k,f],j)=>`<circle cx="${20+j*120}" cy="604" r="6" fill="${f.color}"/><text x="${30+j*120}" y="608">${f.name}</text>`).join('')}</g>`;
+  svg.innerHTML=h;
+  svg.querySelectorAll('.sys').forEach(g=>g.onclick=()=>{selSys=+g.dataset.i;renderMap();});
+  $('mHouse').textContent='Void Vigil Cohort';$('mCapt').textContent=G.marshalName+' ('+HOUSES[G.marshalHouse].name+')';
+  $('mTurn').textContent=G.turn;$('mMaxTurn').textContent=MAX_TURNS;$('mReq').textContent=G.req;$('mInc').textContent=income();
+  $('mSys').textContent=G.systems.filter(s=>s.o==='concord').length+' / '+G.systems.length;
+  $('mapLog').innerHTML=G.log.map(l=>`<div>${esc(l)}</div>`).join('');
+  $('objText').innerHTML=`Storm <b class="gold">The Weeping Citadel</b> and slay Vhar'kul the Unmade before the end of turn ${MAX_TURNS} (<b>${MAX_TURNS-G.turn+1}</b> turns remain). <span class="redt">If Bastion Kepler falls, the crusade is lost.</span>`;
+  $('btnArmoury').disabled=G.systems[G.loc].o!=='concord';
+  renderSysInfo(reach);
+}
+function rewardText(r){if(!r)return 'None';switch(r.type){case 'req':return `${r.amt} Supply`;case 'item':return `Armament: ${W[r.item].name}`;case 'recruit':return `A free ${CLASSES[r.cls].name}`;case 'seer':return 'Unlocks Void Oracle recruitment';case 'final':return 'Victory';}return '';}
+function renderSysInfo(reach){const el=$('sysInfo');
+  if(selSys===null){el.innerHTML=`<h3>Sector Map</h3><div class="small dim">Select a star system to see its details. Systems inside a dashed gold ring are in jump range of your Cohort.</div><div class="small" style="margin-top:10px">Cohort at: <b class="gold">${esc(G.systems[G.loc].n)}</b><br>Squad: ${G.roster.map(u=>esc(u.name.replace('Sworn ',''))+` (${u.hp}/${stats(u).maxHp})`).join(', ')||'<span class="redt">none, recruit in the Armoury</span>'}</div>`;return;}
+  const s=G.systems[selSys];const f=FACTIONS[s.o];
+  let h=`<h3>${esc(s.n)}</h3><div>Held by: <b style="color:${f.color}">${f.name}</b>${s.o!=='concord'&&s.t?` · Threat <b class="redt">${s.t}</b>`:''}</div>`;
+  h+=`<div class="small">Supply value: ${s.v}/turn${s.r&&!s.claimed?` · Reward: <span class="gold">${rewardText(s.r)}</span>`:''}</div>`;
+  h+=`<p class="small dim" style="font-style:italic">${esc(s.f)}</p>`;
+  if(selSys===G.loc)h+=`<div class="gold small">Your Cohort is here.</div>`;
+  else if(reach.has(selSys)){const enemy=s.o!=='concord'&&s.o!=='unclaimed';
+    h+=`<button id="btnDeploy">${enemy?'Deploy and Attack':s.o==='unclaimed'?'Deploy and Claim':'Redeploy Here'}</button>`;}
+  else h+=`<div class="small dim">Out of jump range. Move through Concord systems, or refit the Void Drives.</div>`;
+  el.innerHTML=h;const b=$('btnDeploy');if(b)b.onclick=()=>deployTo(selSys);}
+function deployTo(i){if(G.over)return;const s=G.systems[i];const from=G.loc;
+  if(s.o!=='concord'&&s.o!=='unclaimed'&&G.roster.length===0){modal('No Forces','<p>You have no Sworn to deploy. Recruit some in the Armoury.</p>');return;}
+  G.loc=i;selSys=null;
+  if(s.o==='concord'){addLog(`The Cohort redeploys to ${s.n}.`);endCampaignTurn();return;}
+  if(s.o==='unclaimed'){s.o='concord';addLog(`${s.n} swears fealty to the Concord.`);const rt=grantReward(s);
+    modal(s.n+' Claimed',`<p class="dim" style="font-style:italic">${esc(s.f)}</p><p>The planetary governor kneels before your Marshal. ${esc(s.n)} now sends supply to the Concord (+${s.v} Supply/turn).</p>${rt?`<p class="gold">${rt}</p>`:''}`,[{t:'Continue',f:()=>endCampaignTurn()}]);return;}
+  modal(`Assault on ${s.n}`,`<p class="dim" style="font-style:italic">${esc(s.f)}</p><p>Enemy: <b style="color:${FACTIONS[s.o].color}">${FACTIONS[s.o].name}</b>, threat level ${s.t}.</p>`,[{t:'Make Planetfall',f:()=>startBattle(i,from)}]);
+}
+function grantReward(s){if(!s.r||s.claimed)return '';s.claimed=true;const r=s.r;
+  switch(r.type){case 'req':G.req+=r.amt;return `Spoils of war: +${r.amt} Supply.`;
+    case 'item':G.inv.push(r.item);return `Recovered armament: ${W[r.item].name} (added to the Armoury stores).`;
+    case 'recruit':if(G.roster.length<MAX_ROSTER){const u=makeUnit(r.cls);G.roster.push(u);return `${u.name}, a newly sworn ${CLASSES[r.cls].name}, joins the Cohort.`;}G.req+=60;return 'Your squad is full, so the aspirants are sent to the Vigil Keep instead (+60 Supply).';
+    case 'seer':G.seer=true;return 'The Void Oracles can reach you again: they can now be recruited in the Armoury.';}
+  return '';}
+function endCampaignTurn(){
+  if(G.over)return;
+  const inc=income();G.req+=inc;
+  G.roster.forEach(u=>{u.hp=Math.min(stats(u).maxHp,u.hp+3);});
+  G.turn++;
+  addLog(`Turn ${G.turn} begins. +${inc} Supply collected.`);
+  enemyPhase();
+  if(G.systems[0].o!=='concord'){gameOver(false,"Bastion Kepler has fallen. Your vigil-ship is cut off and the crusade falls apart. The Cinder Reach goes dark.");return;}
+  if(G.turn>MAX_TURNS){gameOver(false,'The Weeping Rift swallows the Cinder Reach whole. Its worlds scream as reality comes apart. You ran out of time.');return;}
+  if(G.systems[G.loc].o!=='concord'){G.loc=0;addLog('The Cohort falls back to Bastion Kepler.');}
+  save();renderMap();
+}
+function enemyPhase(){
+  const S=G.systems;const pressure=0.16+G.turn*0.008;
+  const attacks=[];
+  S.forEach((s,i)=>{if(s.o==='concord'||s.o==='unclaimed')return;
+    for(const n of neighbors(i)){const t=S[n];if(t.o==='concord'&&n!==G.loc&&Math.random()<pressure*(0.6+s.t*0.15)){attacks.push([i,n]);break;}}});
+  attacks.slice(0,2).forEach(([a,n])=>{const s=S[a],t=S[n];if(t.o!=='concord')return;
+    const def=0.45+0.2*G.ship.defenses+(t.home?0.3:0);
+    if(Math.random()<def)addLog(`${FACTIONS[s.o].name} from ${s.n} strike at ${t.n}, but the defenders throw them back.`);
+    else{t.o=s.o;t.t=Math.max(1,Math.min(3,s.t-1));addLog(`⚠ ${t.n} has fallen to the ${FACTIONS[s.o].name} of ${s.n}!`);}
+  });
+  const r=Math.random();const idx=f=>S.map((s,i)=>i).filter(i=>S[i].o===f);
+  if(r<0.35){const i=pick(idx('choir'));if(i!==undefined){const un=neighbors(i).filter(n=>S[n].o==='unclaimed');
+    if(un.length){const n=pick(un);S[n].o='choir';S[n].t=1;addLog(`The Ashen Choir rises on ${S[n].n}. The world is lost to the rot.`);}
+    else if(!S[i].final&&S[i].t<5){S[i].t++;addLog(`The rot deepens on ${S[i].n} (threat ${S[i].t}).`);}}}
+  else if(r<0.5){const i=pick(idx('swarm'));if(i!==undefined){const un=neighbors(i).filter(n=>S[n].o==='unclaimed');
+    if(un.length){const n=pick(un);S[n].o='swarm';S[n].t=1;addLog(`A Vorrid brood-cloud descends on ${S[n].n}. Its people are devoured.`);}else if(S[i].t<5){S[i].t++;addLog(`The swarm on ${S[i].n} grows (threat ${S[i].t}).`);}}}
+  else if(r<0.62){const nc=S.filter(s=>s.o==='revenants'&&s.t<5);if(nc.length){const s=pick(nc);s.t++;addLog(`More of the iron dead march out of ${s.n}'s vaults (threat ${s.t}).`);}}
+  else if(r<0.74){const ok=S.filter(s=>s.o==='horde'&&s.t<5);if(ok.length){const s=pick(ok);s.t++;addLog(`Grakk warbands flock to ${s.n}, spoiling for a fight (threat ${s.t}).`);}}
+}
+function gameOver(win,text){G.over=true;try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+  $('eTitle').textContent=win?'THE REACH IS CLEANSED':'THE CRUSADE HAS FAILED';$('eTitle').style.color=win?'#e8c35a':'#d0342c';
+  $('eText').textContent=text;
+  $('eStats').innerHTML=`Campaign turns: ${G.turn} · Battles won: ${G.battlesWon} · Battles lost: ${G.battlesLost} · Enemies slain: ${G.kills} · Systems held: ${G.systems.filter(s=>s.o==='concord').length}<br>Ledger of Ashes: ${G.fallen.length?G.fallen.map(esc).join(', '):'none fell'}`;
+  show('ending');}
+$('btnEndMenu').onclick=()=>{show('title');refreshTitle();};
+$('btnHold').onclick=()=>{addLog('The Cohort holds position, rearms, and keeps vigil.');G.roster.forEach(u=>u.hp=Math.min(stats(u).maxHp,u.hp+3));endCampaignTurn();};
+$('btnSave').onclick=()=>{addLog('Crusade records saved to the archive.');save();renderMap();};
+$('btnMenu').onclick=()=>{save();show('title');refreshTitle();};
+$('btnArmoury').onclick=()=>openShop();
+
+/* ================= BATTLE ================= */
+const GRID_W=10,GH=8,TS=64;
+const cv=$('bcanvas'),ctx=cv.getContext('2d');
+function startBattle(sysIdx,fromIdx){
+  const s=G.systems[sysIdx];const grid=[];
+  for(let y=0;y<GH;y++){grid.push([]);for(let x=0;x<GRID_W;x++)grid[y].push(0);}
+  const nObs=10+rnd(5);let placed=0,guard=0;
+  while(placed<nObs&&guard++<200){const x=2+rnd(6),y=rnd(GH);if(grid[y][x])continue;grid[y][x]=Math.random()<0.7?1:2;placed++;}
+  B={sys:sysIdx,from:fromIdx,faction:s.o,threat:s.t,grid,units:[],round:1,phase:'player',sel:null,mode:null,log:[],floats:[],buff:false,orbitalUsed:false,howl:false,over:false,boss:!!s.final};
+  const ys=[1,3,5,2,6,4,0,7];
+  G.roster.slice(0,MAX_ROSTER).forEach((u,i)=>{const st=stats(u);B.units.push({side:'p',ref:u,name:u.name,letter:CLASSES[u.cls].letter,x:i%2,y:ys[i],hp:Math.max(1,u.hp),maxHp:st.maxHp,moved:false,acted:false,cd:0,ability:CLASSES[u.cls].ability,kills:0,corrupt:0});});
+  let pts=3.5+s.t*3.8;const fr=FACTIONS[s.o].roster;const list=[];
+  if(s.final){list.push('fallen_god');pts=7.5;}
+  let g2=0;while(pts>0.5&&list.length<14&&g2++<200){const opts=fr.filter(o=>!o[2]||s.t>=o[2]);const tot=opts.reduce((a,o)=>a+o[1],0);let r=Math.random()*tot,ch=opts[0];for(const o of opts){r-=o[1];if(r<=0){ch=o;break;}}
+    const e=ENEMY[ch[0]];if(e.pts>pts+0.3)continue;list.push(ch[0]);pts-=e.pts;}
+  const spots=[];for(let x=GRID_W-1;x>=GRID_W-3;x--)for(let y=0;y<GH;y++)spots.push([x,y]);
+  spots.forEach(([x,y])=>grid[y][x]=0);
+  list.forEach((k,i)=>{const sp=(i===0&&s.final)?spots.splice(3,1)[0]:spots.splice(rnd(spots.length),1)[0];if(!sp)return;const e=ENEMY[k];const hp=e.hp+(e.boss?0:s.t);
+    B.units.push({side:'e',key:k,def:e,name:e.name,letter:e.l,x:sp[0],y:sp[1],hp,maxHp:hp,cd:0,reanimated:false,down:false,corrupt:0});});
+  B.units.filter(u=>u.side==='p').forEach(u=>grid[u.y][u.x]=0);
+  B.sel=0;
+  $('bLog').innerHTML='';
+  blog(`Planetfall on ${esc(s.n)}! ${B.units.filter(u=>u.side==='e').length} ${FACTIONS[s.o].name} contacts.`);
+  if(s.final)blog(`<span class="redt">Vhar'kul the Unmade laughs as reality buckles around him.</span>`);
+  $('bTitle').textContent=`${s.n}: ${FACTIONS[s.o].name} (Threat ${s.t})`;
+  show('battle');updateBattleUI();
+}
+function blog(t){B.log.unshift(t);B.log=B.log.slice(0,60);$('bLog').innerHTML=B.log.map(l=>`<div>${l}</div>`).join('');}
+function alive(side){return B.units.filter(u=>u.side===side&&u.hp>0&&!u.down);}
+function unitAt(x,y){return B.units.find(u=>u.hp>0&&!u.down&&u.x===x&&u.y===y);}
+function passable(x,y){return x>=0&&y>=0&&x<GRID_W&&y<GH&&B.grid[y][x]===0&&!unitAt(x,y);}
+function dist(a,b){return Math.abs(a.x-b.x)+Math.abs(a.y-b.y);}
+function bfs(sx,sy,maxD){const d=new Map();d.set(sx+','+sy,0);const q=[[sx,sy]];
+  while(q.length){const [x,y]=q.shift();const cd=d.get(x+','+y);if(cd>=maxD)continue;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+','+ny;if(d.has(k)||!passable(nx,ny))continue;d.set(k,cd+1);q.push([nx,ny]);}}
+  return d;}
+function los(a,b){const steps=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y))*3;
+  for(let i=1;i<steps;i++){const t=i/steps;const x=Math.round(a.x+(b.x-a.x)*t),y=Math.round(a.y+(b.y-a.y)*t);
+    if((x===a.x&&y===a.y)||(x===b.x&&y===b.y))continue;if(B.grid[y][x]===2)return false;}return true;}
+function inCover(att,tgt){const sx=Math.sign(att.x-tgt.x),sy=Math.sign(att.y-tgt.y);
+  const chk=(x,y)=>x>=0&&y>=0&&x<GRID_W&&y<GH&&B.grid[y][x]>0;return !!((sx&&chk(tgt.x+sx,tgt.y))||(sy&&chk(tgt.x,tgt.y+sy)));}
+function pStats(u){return stats(u.ref);}
+function ammoOf(u){const w=W[u.ref.ranged];return (w.slug&&u.ref.ammo&&u.ref.ammo!=='standard'&&AMMO[u.ref.ammo])?AMMO[u.ref.ammo]:null;}
+function rangedProfile(u){if(u.side==='p'){const w=W[u.ref.ranged];const st=pStats(u);const am=ammoOf(u);const ign=!!(w.flame||(am&&am.ignoreCover));
+    return{range:w.range+st.rangeBonus+((am&&am.range)||0),dmg:w.dmg+(B.buff?1:0)+((am&&am.dmg)||0)+(ign?st.flameDmg:0),ap:w.ap+((am&&am.ap)||0),
+      acc:st.acc+w.acc+st.rangedAcc+(w.heavy?st.heavyAcc:0)+(B.buff||0)+((am&&am.acc)||0)-(u.corrupt>0?15:0),ignoreCover:ign};}
+  return{range:u.def.range,dmg:u.def.rdmg,ap:u.def.rap,acc:u.def.acc+5-(u.corrupt>0?15:0),ignoreCover:false};}
+function meleeProfile(u){if(u.side==='p'){const w=W[u.ref.melee];const st=pStats(u);return{dmg:w.dmg+st.meleeBonus+(B.buff?1:0),ap:w.ap,acc:st.acc+st.meleeAcc+10+w.acc+(B.buff||0)-(u.corrupt>0?15:0)};}
+  return{dmg:u.def.mdmg,ap:u.def.map,acc:u.def.acc+10-(u.corrupt>0?15:0)};}
+function armorOf(u){return u.side==='p'?pStats(u).armor:u.def.armor;}
+function hitChance(att,tgt,melee){const p=melee?meleeProfile(att):rangedProfile(att);let c=p.acc;if(!melee){if(!p.ignoreCover&&inCover(att,tgt))c-=25;if(dist(att,tgt)>Math.ceil(p.range*0.6))c-=5;}
+  if(tgt.side==='p'&&B.round<=2&&pStats(tgt).stealth)c-=30;return clamp(c,5,95);}
+function canShoot(att,tgt){const p=rangedProfile(att);return p.range>0&&dist(att,tgt)<=p.range&&dist(att,tgt)>1&&los(att,tgt);}
+function float(x,y,t,c){B.floats.push({x,y,t,c,born:performance.now()});}
+function short(n){return esc(n.replace('Sworn ',''));}
+function dealDamage(att,tgt,dmg,ap,ignore){if(att&&att.side==='p'&&tgt.side==='e'&&ALIEN.has(tgt.def.f))dmg+=pStats(att).alienDmg;
+  const arm=ignore?0:Math.max(0,armorOf(tgt)-ap);const d=Math.max(1,dmg-arm);tgt.hp-=d;float(tgt.x,tgt.y,'-'+d,'#ff6a5a');
+  if(tgt.hp<=0&&tgt.side==='p'&&tgt.ref.cls==='marshal'&&perkCount('unyielding')&&!tgt.unyieldUsed){tgt.unyieldUsed=true;tgt.hp=1;float(tgt.x,tgt.y,'UNYIELDING','#e8c35a');blog(`<span class="gold">${esc(tgt.name)} refuses to fall!</span>`);}
+  if(tgt.hp<=0){tgt.hp=0;onKill(att,tgt);}return d;}
+function onKill(att,tgt){
+  if(tgt.side==='e'){if(att&&att.side==='p')att.kills++;
+    if(tgt.def.reanimate&&!tgt.reanimated&&Math.random()<0.5){tgt.down=true;tgt.hp=0;blog(`<span class="grn">The ${tgt.name} collapses... but its iron frame starts dragging itself back together.</span>`);return;}
+    G.kills++;blog(`<span class="gold">${tgt.name} is slain.</span>`);}
+  else{if(tgt.ref.cls==='marshal')blog(`<span class="redt">${esc(tgt.name)} is struck down! His surgeons will drag him from the field.</span>`);else blog(`<span class="redt">${esc(tgt.name)} has fallen. The Vigil will remember his name.</span>`);}
+}
+function attack(att,tgt,melee){const p=melee?meleeProfile(att):rangedProfile(att);const c=hitChance(att,tgt,melee);
+  const an=att.side==='p'?short(att.name):att.name;
+  if(rnd(100)<c){const d=dealDamage(att,tgt,p.dmg,p.ap,false);blog(`${an} ${melee?'strikes':'fires at'} ${short(tgt.name)} (${c}%): <b>${d}</b> dmg.`);
+    if(att.side==='e'&&att.def.f==='choir'&&tgt.hp>0&&Math.random()<0.3){tgt.corrupt=2;blog(`<span class="redt">${esc(tgt.name)} is touched by corruption (-15% hit).</span>`);}}
+  else{float(tgt.x,tgt.y,'miss','#aaa');blog(`<span class="dim">${an} ${melee?'swings at':'fires at'} ${short(tgt.name)} and misses (${c}%).</span>`);}}
+
+/* --- player input --- */
+function selected(){return B&&B.sel!=null&&B.units[B.sel]&&B.units[B.sel].hp>0?B.units[B.sel]:null;}
+function cellFromEvent(e){const r=cv.getBoundingClientRect();return[Math.floor((e.clientX-r.left)*(cv.width/r.width)/TS),Math.floor((e.clientY-r.top)*(cv.height/r.height)/TS)];}
+cv.addEventListener('click',e=>{const [x,y]=cellFromEvent(e);battleClick(x,y);});
+cv.addEventListener('mousemove',e=>{if(!B)return;const [x,y]=cellFromEvent(e);
+  const t=$('tip');const u=unitAt(x,y);const s=selected();
+  if(u){let h=`<b>${esc(u.name)}</b>${u.side==='p'?` <span class="dim">(${HOUSES[u.ref.house].name})</span>`:''} HP ${u.hp}/${u.maxHp} · Armour ${armorOf(u)}`;if(u.side==='e'&&s&&!s.acted){if(dist(s,u)===1)h+=`<br>Melee: ${hitChance(s,u,true)}% to hit`;else if(canShoot(s,u))h+=`<br>Shoot: ${hitChance(s,u,false)}% to hit${inCover(s,u)?' (in cover)':''}`;else h+='<br>Out of range / no line of sight';}
+    t.innerHTML=h;t.style.display='block';t.style.left=(e.clientX+14)+'px';t.style.top=(e.clientY+10)+'px';}else t.style.display='none';});
+cv.addEventListener('mouseleave',()=>$('tip').style.display='none');
+function battleClick(x,y){if(!B||B.over||B.phase!=='player')return;if(x<0||y<0||x>=GRID_W||y>=GH)return;
+  const u=unitAt(x,y);const s=selected();
+  if(B.mode==='orbital'){B.mode=null;B.orbitalUsed=true;blog('<span class="gold">The vigil-ship\'s lance batteries open fire from orbit!</span>');
+    B.units.filter(t=>t.side==='e'&&t.hp>0&&!t.down&&Math.abs(t.x-x)<=1&&Math.abs(t.y-y)<=1).forEach(t=>dealDamage(null,t,5,0,true));B.flash={x,y,born:performance.now()};afterAction();return;}
+  if(B.mode==='ability'&&s){useAbility(s,x,y,u);return;}
+  if(u&&u.side==='p'){B.sel=B.units.indexOf(u);B.mode=null;updateBattleUI();return;}
+  if(!s)return;
+  if(u&&u.side==='e'){if(s.acted){blog('<span class="dim">That Sworn has already acted this round.</span>');return;}
+    if(dist(s,u)===1){attack(s,u,true);s.acted=true;afterAction();}
+    else if(canShoot(s,u)){attack(s,u,false);s.acted=true;afterAction();}
+    else blog('<span class="dim">Target out of range or no line of sight.</span>');return;}
+  if(!u&&!s.moved){const d=bfs(s.x,s.y,pStats(s).move);if(d.has(x+','+y)&&!(x===s.x&&y===s.y)){s.x=x;s.y=y;s.moved=true;updateBattleUI();}}
+}
+function useAbility(s,x,y,u){const a=ABIL[s.ability];
+  const done=()=>{s.acted=true;s.cd=a.cd;B.mode=null;afterAction();};
+  if(a.target==='tile'){if(dist(s,{x,y})>a.range){blog('<span class="dim">Out of range.</span>');return;}
+    blog(`${short(s.name)} hurls a frag grenade!`);B.flash={x,y,born:performance.now()};
+    B.units.filter(t=>t.side==='e'&&t.hp>0&&!t.down&&Math.abs(t.x-x)<=1&&Math.abs(t.y-y)<=1).forEach(t=>dealDamage(s,t,3,0,true));done();return;}
+  if(a.target==='enemy'){if(!u||u.side!=='e'){blog('<span class="dim">Select an enemy target.</span>');return;}
+    if(dist(s,u)>a.range||!los(s,u)){blog('<span class="dim">Out of range or no line of sight.</span>');return;}
+    if(s.ability==='voidlash'){const d=dealDamage(s,u,5,0,true);blog(`<span style="color:#7fb8ff">${short(s.name)} unleashes a Void Lash: ${d} dmg!</span>`);}
+    else{const c=clamp(pStats(s).acc+5-(inCover(s,u)?25:0),5,95);if(rnd(100)<c){const d=dealDamage(s,u,7,3,false);blog(`Breach rocket hits ${u.name} (${c}%): <b>${d}</b> dmg!`);}else{float(u.x,u.y,'miss','#aaa');blog(`<span class="dim">The breach rocket misses (${c}%).</span>`);}}
+    done();return;}
+  if(a.target==='ally'){if(!u||u.side!=='p'||dist(s,u)>1){blog('<span class="dim">Select yourself or an adjacent Sworn.</span>');return;}
+    const h=Math.min(6,u.maxHp-u.hp);u.hp+=h;float(u.x,u.y,'+'+h,'#7fdc7f');blog(`<span class="grn">${short(s.name)} tends to ${short(u.name)}: +${h} HP.</span>`);done();return;}
+}
+$('btnAbility').onclick=()=>{const s=selected();if(!s||s.side!=='p'||s.acted||s.cd>0||B.phase!=='player')return;const a=ABIL[s.ability];
+  if(a.target==='self'){B.buff=perkCount('inspiring')?20:15;blog(`<span class="gold">${esc(s.name)} calls the Oath of Fury! The Cohort fights with renewed fury (+${B.buff}% hit).</span>`);s.acted=true;s.cd=a.cd-perkCount('inspiring');afterAction();return;}
+  B.mode=B.mode==='ability'?null:'ability';if(B.mode)blog(`<span class="dim">${a.name}: choose a target.</span>`);updateBattleUI();};
+$('btnOrbital').onclick=()=>{if(!B||B.orbitalUsed||!G.ship.lance||B.phase!=='player')return;B.mode=B.mode==='orbital'?null:'orbital';if(B.mode)blog('Select the target for the orbital strike.');updateBattleUI();};
+$('btnAmmo').onclick=()=>{const s=selected();if(!s||s.acted||B.phase!=='player'||!W[s.ref.ranged].slug)return;const L=G.ammo;const i=L.indexOf(s.ref.ammo||'standard');s.ref.ammo=L[(i+1)%L.length];blog(`<span class="dim">${short(s.name)} loads ${AMMO[s.ref.ammo].name}.</span>`);updateBattleUI();};
+$('btnEndTurn').onclick=()=>{if(B&&B.phase==='player'&&!B.over)enemyTurn();};
+$('btnRetreat').onclick=()=>{if(!B||B.over||B.phase!=='player')return;modal('Withdraw?','<p>Your Cohort will pull back to the ship. The battle is lost and the system stays in enemy hands.</p>',[{t:'Withdraw',f:()=>endBattle(false,true)},{t:'Fight On'}]);};
+function afterAction(){if(checkEnd())return;updateBattleUI();}
+function checkEnd(){if(!B||B.over)return true;if(alive('e').length===0){endBattle(true);return true;}if(alive('p').length===0){endBattle(false);return true;}return false;}
+
+/* --- enemy AI --- */
+async function enemyTurn(){B.phase='enemy';B.mode=null;updateBattleUI();
+  const F=B.faction;
+  for(const u of B.units.filter(u=>u.side==='e'&&u.down)){u.down=false;u.reanimated=true;
+    const occ=B.units.find(o=>o!==u&&o.hp>0&&!o.down&&o.x===u.x&&o.y===u.y);
+    if(occ){let best=null;const d=bfs(u.x,u.y,0);
+      outer:for(let r=1;r<6;r++)for(let dx=-r;dx<=r;dx++)for(let dy=-r;dy<=r;dy++){const x=u.x+dx,y=u.y+dy;if(passable(x,y)){best=[x,y];break outer;}}
+      if(!best){continue;}u.x=best[0];u.y=best[1];}
+    u.hp=Math.ceil(u.maxHp/2);
+    blog(`<span class="grn">The iron dead do not rest: the ${u.name} stands up again!</span>`);float(u.x,u.y,'RISEN','#5fd6b0');}
+  let moveBonus=0;
+  if(F==='horde'&&B.round===2&&!B.howl){B.howl=true;moveBonus=2;blog('<span class="grn" style="font-size:15px">BLOOD-HOWL! The Grakk charge with a terrible roar (+2 move)!</span>');}
+  if(F==='swarm'&&B.round===1)blog('<span style="color:#c48be0">The Swarm\'s droning brood-song drowns your comms. The swarm surges forward.</span>');
+  updateBattleUI();await sleep(250);
+  for(const e of B.units.filter(u=>u.side==='e')){if(!B||B.over)return;if(e.hp<=0||e.down)continue;
+    await enemyAct(e,moveBonus);updateBattleUI();if(checkEnd())return;await sleep(220);}
+  B.units.forEach(u=>{if(u.corrupt>0)u.corrupt--;if(u.cd>0&&u.side==='e')u.cd--;});
+  B.round++;B.buff=false;B.phase='player';
+  B.units.filter(u=>u.side==='p').forEach(u=>{u.moved=false;u.acted=false;if(u.cd>0)u.cd--;});
+  if(!selected()){const firstP=B.units.findIndex(u=>u.side==='p'&&u.hp>0);B.sel=firstP>=0?firstP:null;}
+  blog(`<span class="gold">Round ${B.round}: your move, Marshal.</span>`);updateBattleUI();}
+async function enemyAct(e,moveBonus){
+  const targets=alive('p');if(!targets.length)return;
+  if(e.def.hexer&&e.cd<=0){const tg=targets.filter(t=>dist(e,t)<=6&&los(e,t));if(tg.length){const t=tg.sort((a,b)=>a.hp-b.hp)[0];
+    const d=dealDamage(e,t,e.def.boss?5:4,0,true);if(t.hp>0)t.corrupt=2;e.cd=2;blog(`<span class="redt">${e.name} hurls a gout of ashfire at ${short(t.name)}: ${d} dmg${t.hp>0?', and corrupts him':''}!</span>`);
+    if(!e.def.boss)return;await sleep(200);if(!alive('p').length)return;}}
+  const nearest=()=>alive('p').sort((a,b)=>dist(e,a)-dist(e,b))[0];
+  let t=nearest();if(!t)return;
+  const mv=e.def.move+moveBonus;
+  if(e.def.ai==='melee'||e.def.range===0){
+    if(dist(e,t)>1){const adj=alive('p').filter(p=>dist(e,p)===1);if(adj.length)t=adj[0];else{stepToward(e,mv,true);t=alive('p').filter(p=>dist(e,p)===1).sort((a,b)=>a.hp-b.hp)[0]||nearest();}}
+    if(t&&dist(e,t)===1)attack(e,t,true);
+    else if(t&&e.def.range>0&&canShoot(e,t))attack(e,t,false);
+  }else{
+    let inRange=alive('p').filter(p=>canShoot(e,p));
+    if(!inRange.length){stepToward(e,mv,false);inRange=alive('p').filter(p=>canShoot(e,p));}
+    const adj=alive('p').filter(p=>dist(e,p)===1);
+    if(adj.length&&(!inRange.length||e.def.mdmg>e.def.rdmg))attack(e,adj[0],true);
+    else if(inRange.length){t=inRange.sort((a,b)=>hitChance(e,b,false)-hitChance(e,a,false)||a.hp-b.hp)[0];attack(e,t,false);}
+  }
+}
+function stepToward(e,mv,melee){const reach=bfs(e.x,e.y,mv);const ps=alive('p');let best=null,bs=1e9;
+  for(const k of reach.keys()){const [x,y]=k.split(',').map(Number);const pos={x,y};let score;
+    if(melee){const md=Math.min(...ps.map(p=>dist(pos,p)));score=(md===1?0:md*10)+reach.get(k)*0.1;}
+    else{const canHit=ps.some(p=>{const d=dist(pos,p);return d<=e.def.range&&d>1&&los(pos,p);});
+      score=canHit?0:Math.min(...ps.map(p=>dist(pos,p)))*10;if(canHit&&ps.some(p=>inCover(p,pos)))score-=3;score+=reach.get(k)*0.1;}
+    if(score<bs){bs=score;best=pos;}}
+  if(best){e.x=best.x;e.y=best.y;}}
+
+/* --- render --- */
+function draw(){requestAnimationFrame(draw);if(!B||!$('battle').classList.contains('active'))return;const now=performance.now();
+  ctx.fillStyle='#0d0c0a';ctx.fillRect(0,0,cv.width,cv.height);
+  for(let y=0;y<GH;y++)for(let x=0;x<GRID_W;x++){const px=x*TS,py=y*TS;
+    ctx.fillStyle=(x+y)%2?'#1a1712':'#1d1a14';ctx.fillRect(px,py,TS,TS);ctx.strokeStyle='#2a241a';ctx.lineWidth=1;ctx.strokeRect(px+.5,py+.5,TS-1,TS-1);
+    const t=B.grid[y][x];
+    if(t===1){ctx.fillStyle='#4a3622';ctx.fillRect(px+8,py+20,TS-16,TS-28);ctx.fillStyle='#5e4529';ctx.fillRect(px+14,py+12,18,12);ctx.fillRect(px+36,py+16,10,8);ctx.strokeStyle='#2a1c10';ctx.strokeRect(px+8.5,py+20.5,TS-17,TS-29);}
+    if(t===2){ctx.fillStyle='#3d3d42';ctx.fillRect(px+16,py+12,TS-32,TS-18);ctx.fillStyle='#55555c';ctx.beginPath();ctx.moveTo(px+12,py+12);ctx.lineTo(px+TS/2,py+3);ctx.lineTo(px+TS-12,py+12);ctx.fill();ctx.strokeStyle='#77777e';ctx.strokeRect(px+16.5,py+12.5,TS-33,TS-19);ctx.fillStyle='#222';ctx.fillRect(px+28,py+22,8,14);}}
+  const s=selected();
+  if(s&&B.phase==='player'){
+    if(!s.moved&&!B.mode){const d=bfs(s.x,s.y,pStats(s).move);for(const k of d.keys()){const [x,y]=k.split(',').map(Number);if(x===s.x&&y===s.y)continue;ctx.fillStyle='rgba(60,120,220,.25)';ctx.fillRect(x*TS+2,y*TS+2,TS-4,TS-4);}}
+    if(!s.acted&&!B.mode)alive('e').forEach(e=>{if(dist(s,e)===1||canShoot(s,e)){ctx.strokeStyle=dist(s,e)===1?'#ff9a3a':'#ff4a3a';ctx.lineWidth=3;ctx.strokeRect(e.x*TS+3,e.y*TS+3,TS-6,TS-6);ctx.lineWidth=1;}});
+    if(B.mode==='ability'){const a=ABIL[s.ability];for(let y=0;y<GH;y++)for(let x=0;x<GRID_W;x++)if(dist(s,{x,y})<=a.range){ctx.fillStyle='rgba(200,160,60,.14)';ctx.fillRect(x*TS+2,y*TS+2,TS-4,TS-4);}}}
+  if(B.mode==='orbital'){ctx.fillStyle='rgba(255,80,40,.08)';ctx.fillRect(0,0,cv.width,cv.height);}
+  for(const u of B.units){if(u.hp<=0&&!u.down)continue;const cx=u.x*TS+TS/2,cy=u.y*TS+TS/2;
+    if(u.down){ctx.fillStyle='rgba(95,214,176,.35)';ctx.beginPath();ctx.arc(cx,cy,10,0,7);ctx.fill();continue;}
+    ctx.save();
+    if(u.side==='p'){const ch=HOUSES[u.ref.house];ctx.fillStyle='#1c1f26';ctx.strokeStyle=(s===u)?'#f3e2b8':'#a8926a';ctx.lineWidth=(s===u)?4:2;if(s===u){ctx.shadowColor='#d9b46a';ctx.shadowBlur=12;}
+      ctx.beginPath();ctx.moveTo(cx-20,cy-22);ctx.lineTo(cx+20,cy-22);ctx.lineTo(cx+22,cy-4);ctx.quadraticCurveTo(cx+18,cy+16,cx,cy+25);ctx.quadraticCurveTo(cx-18,cy+16,cx-22,cy-4);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.shadowBlur=0;if(u.moved&&u.acted&&B.phase==='player'){ctx.fillStyle='rgba(0,0,0,.5)';ctx.fill();}
+      ctx.fillStyle=ch.color;ctx.fillRect(cx-19,cy-21,38,6);ctx.strokeStyle='#a8926a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,cy+12);ctx.lineTo(cx+5,cy+17);ctx.lineTo(cx,cy+22);ctx.lineTo(cx-5,cy+17);ctx.closePath();ctx.fillStyle=ch.color;ctx.fill();ctx.stroke();}
+    else{const f=u.def.f;ctx.lineWidth=2;ctx.strokeStyle='#000';
+      if(f==='horde'){ctx.fillStyle='#4f8a2a';const r=u.def.pts>=3?22:18;ctx.fillRect(cx-r,cy-r,r*2,r*2);ctx.strokeRect(cx-r,cy-r,r*2,r*2);}
+      else if(f==='revenants'){ctx.fillStyle='#8f9a98';ctx.beginPath();ctx.moveTo(cx,cy-23);ctx.lineTo(cx+21,cy+18);ctx.lineTo(cx-21,cy+18);ctx.closePath();ctx.fill();ctx.strokeStyle='#5fd6b0';ctx.stroke();}
+      else if(f==='swarm'){ctx.fillStyle='#7a3a96';const r=u.def.pts>=3?25:19;ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx+r,cy);ctx.lineTo(cx,cy+r);ctx.lineTo(cx-r,cy);ctx.closePath();ctx.fill();ctx.strokeStyle='#e0c0a0';ctx.stroke();}
+      else{ctx.fillStyle=u.def.boss?'#5a0a0a':'#8a1c1c';ctx.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4+Math.PI/8,r=u.def.boss?28:21;ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath();ctx.fill();ctx.strokeStyle=u.def.boss?'#ff7040':'#d9a040';ctx.stroke();}}
+    ctx.fillStyle=u.side==='p'?'#efe3c4':(u.def.f==='revenants'?'#0b2a22':'#f0e8d8');ctx.font='bold 18px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(u.letter,cx,cy+(u.side==='e'&&u.def.f==='revenants'?5:1));
+    if(u.corrupt>0){ctx.fillStyle='#ff4a3a';ctx.font='13px Georgia';ctx.fillText('✶',cx+20,cy+20);}
+    const w=TS-12;ctx.fillStyle='#300';ctx.fillRect(u.x*TS+6,u.y*TS+2,w,5);ctx.fillStyle=u.side==='p'?'#5fbf4a':'#d04a3a';ctx.fillRect(u.x*TS+6,u.y*TS+2,w*u.hp/u.maxHp,5);
+    ctx.restore();}
+  if(B.flash){const a=1-(now-B.flash.born)/500;if(a>0){ctx.fillStyle=`rgba(255,180,60,${a*.45})`;ctx.fillRect((B.flash.x-1)*TS,(B.flash.y-1)*TS,TS*3,TS*3);}else B.flash=null;}
+  B.floats=B.floats.filter(f=>now-f.born<1000);for(const f of B.floats){const t=(now-f.born)/1000;ctx.globalAlpha=1-t;ctx.fillStyle=f.c;ctx.font='bold 17px Georgia';ctx.textAlign='center';ctx.fillText(f.t,f.x*TS+TS/2,f.y*TS+14-t*22);ctx.globalAlpha=1;}
+  if(B.phase==='enemy'){ctx.fillStyle='rgba(120,0,0,.12)';ctx.fillRect(0,0,cv.width,cv.height);}
+}
+requestAnimationFrame(draw);
+function updateBattleUI(){if(!B)return;$('bRound').textContent=B.round;
+  $('bPhase').innerHTML=B.phase==='player'?'<span class="gold">Your Turn</span>':'<span class="redt">Enemy Turn…</span>';
+  const s=selected();const el=$('bUnit');
+  if(s&&s.side==='p'){const st=pStats(s);const u=s.ref;const a=ABIL[s.ability];
+    el.innerHTML=`<h3>${esc(s.name)}</h3><div class="small"><span class="chip" style="background:${HOUSES[u.house].color}"></span>${HOUSES[u.house].name} · ${CLASSES[u.cls].name} · Level ${u.lvl}</div>
+    <div class="small dim">${HOUSES[u.house].bonus}</div>
+    <div>HP <b>${s.hp}/${s.maxHp}</b> · Armour ${st.armor} · Move ${st.move} · Hit ${st.acc}%</div>
+    <div class="small">Ranged: ${W[u.ranged].name} (${W[u.ranged].desc})<br>Melee: ${W[u.melee].name} (${W[u.melee].desc}${st.meleeBonus?`, +${st.meleeBonus} dmg`:''})<br>Gear: ${W[u.armour].name}${u.shield!=='none_shield'?', '+W[u.shield].name:''}${W[u.ranged].slug?`<br>Ammo: <span class="gold">${AMMO[u.ammo||'standard'].name}</span>`:''}${u.cls==='marshal'&&G.perks.length?`<br>Honours: ${G.perks.map(k=>PERKS[k].name).join(', ')}`:''}</div>
+    <div class="small" style="margin-top:6px">${s.moved?'<span class="dim">Moved</span>':'<span class="grn">Can move</span>'} · ${s.acted?'<span class="dim">Acted</span>':'<span class="grn">Can act</span>'}${s.corrupt>0?' · <span class="redt">Corrupted</span>':''}${B.buff?' · <span class="gold">Oath of Fury</span>':''}</div>
+    <div class="small dim" style="margin-top:6px"><b class="gold">${a.name}</b>: ${a.desc}</div>`;
+    $('btnAbility').textContent=`${a.name}${s.cd>0?` (recharging: ${s.cd})`:''}${B.mode==='ability'?' (choose target)':''}`;
+    $('btnAbility').disabled=s.acted||s.cd>0||B.phase!=='player';
+    const slug=W[u.ranged].slug;$('btnAmmo').textContent=slug?`Ammo: ${AMMO[u.ammo||'standard'].name}${G.ammo.length>1?' (click to switch)':''}`:'Ammo: no slug weapon';$('btnAmmo').disabled=!slug||G.ammo.length<2||s.acted||B.phase!=='player';}
+  else{el.innerHTML='<h3>No Sworn selected</h3><div class="small dim">Click one of your Sworn (the shield-shaped tokens) to give him orders.</div>';$('btnAbility').textContent='Ability';$('btnAbility').disabled=true;$('btnAmmo').textContent='Munitions';$('btnAmmo').disabled=true;}
+  $('btnOrbital').style.display=G.ship.lance?'block':'none';$('btnOrbital').disabled=B.orbitalUsed||B.phase!=='player';
+  $('btnOrbital').textContent='Orbital Lance Strike'+(B.orbitalUsed?' (used)':B.mode==='orbital'?' (choose target)':'');
+  $('btnEndTurn').disabled=B.phase!=='player'||B.over;$('btnRetreat').disabled=B.phase!=='player'||B.over;}
+
+/* --- end battle --- */
+function endBattle(win,retreat){B.over=true;const s=G.systems[B.sys];let html='';
+  const pUnits=B.units.filter(u=>u.side==='p');const fallen=[];const lvls=[];
+  pUnits.forEach(pu=>{const u=pu.ref;
+    if(pu.hp<=0){if(u.cls==='marshal'){u.hp=1;html+=`<div class="redt">${esc(u.name)} was struck down but survives, gravely wounded.</div>`;}else fallen.push(u);}
+    else u.hp=pu.hp;
+    u.kills+=pu.kills;
+    if(pu.hp>0||u.cls==='marshal'){const gain=Math.round(((win?15:5)+pu.kills*8)*(1+0.25*perkCount('veteran')));u.xp+=gain;while(u.xp>=xpNeeded(u)){u.xp-=xpNeeded(u);u.lvl++;u.hp+=2;if(u.cls==='marshal')G.pendingPerks=(G.pendingPerks||0)+1;lvls.push(`${u.name} reaches level ${u.lvl}! (+2 max HP, +3% hit${u.lvl%2===1?', +1 melee dmg':''})`);}}
+  });
+  fallen.forEach(u=>{G.roster=G.roster.filter(r=>r!==u);G.fallen.push(`${u.name} (${CLASSES[u.cls].name}, Lv ${u.lvl})`);html+=`<div class="redt">✧ ${esc(u.name)} fell in battle. His oath-ring will be returned to ${HOUSES[u.house].name}.</div>`;});
+  const slain=B.units.filter(u=>u.side==='e'&&u.hp<=0&&!u.down).length;
+  if(win){G.battlesWon++;const req=30+s.t*20;G.req+=req;s.o='concord';const t0=s.t;s.t=0;
+    $('rTitle').textContent='Victory: '+s.n+' Cleansed';
+    html=`<p>The ${FACTIONS[B.faction].name} on ${esc(s.n)} have been wiped out. The world now sends supply to the Concord (+${s.v} Supply/turn).</p><p class="gold">+${req} Supply in battlefield salvage.</p>`+(s.r&&!s.claimed&&s.r.type!=='final'?`<p class="gold">${grantReward(s)}</p>`:'')+html;
+    addLog(`Victory at ${s.n} against the ${FACTIONS[B.faction].name} (threat ${t0}).`);
+    if(s.final){B=null;gameOver(true,`Vhar'kul the Unmade is torn apart and dragged screaming back into the Rift, and the citadel crumbles to ash with him. The Weeping Rift seals. Across the Cinder Reach, the stars come back one by one. The Void Vigil has kept its oath, and the Cohort's names will be cut into the walls of the Vigil Keep. The Concord endures. For now.`);return;}
+  }else{G.battlesLost++;G.loc=B.from;$('rTitle').textContent=(retreat?'Withdrawal from ':'Defeat on ')+s.n;
+    html=`<p>${retreat?'Your Cohort withdraws under fire.':'Your Cohort has been overwhelmed.'} The survivors fall back to ${esc(G.systems[B.from].n)}. ${esc(s.n)} stays in enemy hands, and the enemy grows bolder.</p>`+html;
+    if(s.t<5&&!s.final)s.t++;addLog(`Defeat at ${s.n}. The Cohort falls back.`);
+    if(G.roster.length<2){const u=makeUnit('vanguard');G.roster.push(u);html+=`<p class="gold">The Vigil Keep answers your distress call: ${esc(u.name)} of ${HOUSES[u.house].name} joins what remains of the Cohort.</p>`;addLog(`${u.name} is sent from the Vigil Keep as reinforcement.`);}}
+  G.roster.forEach(u=>u.hp=clamp(u.hp,1,stats(u).maxHp));
+  if(lvls.length)html+=`<p class="gold">${lvls.map(esc).join('<br>')}</p>`;
+  html+=`<p class="small dim">Enemies slain in this battle: ${slain}</p>`;
+  $('rBody').innerHTML=html;B=null;
+  endCampaignTurn();if(G.over)return;
+  show('results');offerPerk();}
+$('btnToArmoury').onclick=()=>openShop();
+
+/* ================= SHOP ================= */
+let shopSel=0,recruitH='random';
+function offerPerk(){if(!G||G.over||!G.pendingPerks)return;const pool=Object.keys(PERKS).filter(k=>!G.perks.includes(k));if(!pool.length){G.pendingPerks=0;return;}
+  const opts=[];while(opts.length<Math.min(3,pool.length)){const k=pick(pool);if(!opts.includes(k))opts.push(k);}
+  modal('Vigil-Marshal Advancement',`<p>Vigil-Marshal ${esc(G.marshalName)} has grown in skill and renown. Choose one honour:</p>`+opts.map(k=>`<p><b class="gold">${PERKS[k].name}</b>: ${PERKS[k].desc}</p>`).join(''),
+    opts.map(k=>({t:PERKS[k].name,f:()=>{G.perks.push(k);G.pendingPerks--;const c=G.roster.find(u=>u.cls==='marshal');if(c)c.hp=Math.min(stats(c).maxHp,c.hp+(k==='ward_crown'?3:0));addLog(`Vigil-Marshal ${G.marshalName} gains the honour: ${PERKS[k].name}.`);save();if($('shop').classList.contains('active'))renderShop();if(G.pendingPerks)setTimeout(offerPerk,0);}})));}
+function openShop(){show('shop');offerPerk();if(shopSel>=G.roster.length)shopSel=0;renderShop();}
+function spend(n){if(G.req<n)return false;G.req-=n;return true;}
+const DEFAULT_GEAR=new Set(['none_shield','vigil_plate','combat_knife']);
+function renderShop(){$('sReq').textContent=G.req;
+  const R=$('sRoster');R.innerHTML='';
+  G.roster.forEach((u,i)=>{const st=stats(u);const d=document.createElement('div');d.className='unitcard'+(i===shopSel?' sel':'');
+    d.innerHTML=`<div><span class="nm">${esc(u.name)}</span> <span class="tag">${CLASSES[u.cls].name}</span> <span class="tag" style="color:#e6d3a8"><span class="chip" style="background:${HOUSES[u.house].color}"></span>${HOUSES[u.house].name}</span> <span class="tag">Lv ${u.lvl}</span></div>
+    <div class="small">HP ${u.hp}/${st.maxHp} · Arm ${st.armor} · Mv ${st.move} · Hit ${st.acc}% · Kills ${u.kills}</div>
+    <div class="bar"><i style="width:${100*u.hp/st.maxHp}%"></i></div><div class="bar xpbar" title="XP"><i style="width:${100*u.xp/xpNeeded(u)}%"></i></div>
+    <div class="small dim">${W[u.ranged].name} · ${W[u.melee].name} · ${W[u.armour].name}${u.shield!=='none_shield'?' · '+W[u.shield].name:''}</div><div class="small dim">${HOUSES[u.house].bonus}</div>${u.cls==='marshal'?`<div class="small gold">Honours: ${G.perks.length?G.perks.map(k=>PERKS[k].name).join(', '):'none yet (pick one each Marshal level-up)'}</div>`:''}`;
+    if(W[u.ranged].slug){const sel=document.createElement('select');sel.className='ammoSel';sel.dataset.uid=u.id;G.ammo.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=AMMO[a].name;if((u.ammo||'standard')===a)o.selected=true;sel.appendChild(o);});
+      sel.onclick=ev=>ev.stopPropagation();sel.onchange=()=>{u.ammo=sel.value;renderShop();};const lab=document.createElement('div');lab.className='small';lab.textContent='Ammunition: ';lab.appendChild(sel);d.appendChild(lab);}
+    if(u.shield!=='none_shield'||u.armour!=='vigil_plate'){const ub=document.createElement('button');ub.className='small';ub.textContent='Unequip armour/shield';ub.onclick=ev=>{ev.stopPropagation();if(u.shield!=='none_shield'){G.inv.push(u.shield);u.shield='none_shield';}if(u.armour!=='vigil_plate'){G.inv.push(u.armour);u.armour='vigil_plate';}u.hp=Math.min(u.hp,stats(u).maxHp);renderShop();};d.appendChild(ub);}
+    d.onclick=()=>{shopSel=i;renderShop();};R.appendChild(d);});
+  if(!G.roster.length)R.innerHTML='<div class="dim">No Sworn remain. Recruit reinforcements.</div>';
+  const I=$('sInv');I.innerHTML='';const sel=G.roster[shopSel];
+  if(!G.inv.length)I.innerHTML='<div class="small dim">The stores are empty.</div>';
+  G.inv.forEach((it,k)=>{const w=W[it];const d=document.createElement('div');d.className='small';d.style.margin='4px 0';
+    d.innerHTML=`<b>${w.name}</b> <span class="dim">(${w.desc})</span> `;const b=document.createElement('button');b.textContent=sel?`Equip on ${sel.name.replace('Sworn ','').replace('Marshal ','Msh. ')}`:'Equip';b.disabled=!sel;
+    b.onclick=()=>{const slot=w.slot;const old=sel[slot];sel[slot]=it;G.inv.splice(k,1);if(old&&!DEFAULT_GEAR.has(old))G.inv.push(old);sel.hp=Math.min(sel.hp,stats(sel).maxHp);renderShop();};
+    d.appendChild(b);if(!w.noSale){const val=Math.floor((w.cost||30)/2);const sb=document.createElement('button');sb.textContent=`Sell (${val})`;sb.onclick=()=>{G.req+=val;G.inv.splice(k,1);renderShop();};d.appendChild(sb);}I.appendChild(d);});
+  const WG=$('sWargear');WG.innerHTML='';
+  SHOP_ITEMS.forEach(it=>{const w=W[it];const tr=document.createElement('tr');tr.innerHTML=`<td><b class="gold">${w.name}</b><br><span class="dim">${w.desc}</span></td><td>${w.cost}</td><td></td>`;
+    const b=document.createElement('button');b.textContent='Buy';b.dataset.item=it;b.disabled=G.req<w.cost;b.onclick=()=>{if(spend(w.cost)){G.inv.push(it);renderShop();}};tr.lastChild.appendChild(b);WG.appendChild(tr);});
+  const AM=$('sAmmo');AM.innerHTML='';
+  ['sabot','overcharge','cinder'].forEach(k=>{const a=AMMO[k];const own=G.ammo.includes(k);const tr=document.createElement('tr');tr.innerHTML=`<td><b class="gold">${a.name}</b><br><span class="dim">${a.desc}</span></td><td>${own?'—':a.cost}</td><td></td>`;
+    const b=document.createElement('button');b.textContent=own?'Issued':'Unlock';b.dataset.ammo=k;b.disabled=own||G.req<a.cost;b.onclick=()=>{if(spend(a.cost)){G.ammo.push(k);addLog(`The Vigil Keep issues ${a.name} to the Cohort.`);renderShop();}};tr.lastChild.appendChild(b);AM.appendChild(tr);});
+  const RC=$('sRecruit');RC.innerHTML='';
+  const rtr=document.createElement('tr');rtr.innerHTML=`<td colspan="3" class="small">House of the next recruit: </td>`;const rs=document.createElement('select');rs.id='recHouse';
+  [['random','Any (House levy)']].concat(H_KEYS.map(k=>[k,HOUSES[k].name])).forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;if(v===recruitH)o.selected=true;rs.appendChild(o);});
+  rs.onchange=()=>{recruitH=rs.value;renderShop();};rtr.firstChild.appendChild(rs);if(recruitH!=='random'){const dd=document.createElement('div');dd.className='dim';dd.textContent=HOUSES[recruitH].bonus;rtr.firstChild.appendChild(dd);}RC.appendChild(rtr);
+  ['vanguard','breacher','surgeon','oracle'].forEach(c=>{const C=CLASSES[c];const locked=c==='oracle'&&!G.seer;const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b class="gold">${C.name}</b><br><span class="dim">${ABIL[C.ability].name}${locked?' · Locked: reclaim Morvenn Relay':''}</span></td><td>${C.cost}</td><td></td>`;
+    const b=document.createElement('button');b.textContent='Recruit';b.dataset.recruit=c;b.disabled=locked||G.req<C.cost||G.roster.length>=MAX_ROSTER;
+    b.onclick=()=>{if(spend(C.cost)){const u=makeUnit(c,null,recruitH==='random'?null:recruitH);G.roster.push(u);addLog(`${u.name} of ${HOUSES[u.house].name} (${C.name}) joins the Cohort.`);renderShop();}};tr.lastChild.appendChild(b);RC.appendChild(tr);});
+  const missing=G.roster.reduce((a,u)=>a+stats(u).maxHp-u.hp,0);const hc=Math.ceil(missing*1.5);
+  const tr=document.createElement('tr');tr.innerHTML=`<td><b class="gold">Infirmary</b><br><span class="dim">Restore all wounds (${missing} HP)</span></td><td>${hc}</td><td></td>`;
+  const hb=document.createElement('button');hb.id='btnHealAll';hb.textContent='Heal All';hb.disabled=!missing||G.req<hc;hb.onclick=()=>{if(spend(hc)){G.roster.forEach(u=>u.hp=stats(u).maxHp);renderShop();}};tr.lastChild.appendChild(hb);RC.appendChild(tr);
+  const cap=document.createElement('tr');cap.innerHTML=`<td colspan="3" class="dim small">Cohort: ${G.roster.length}/${MAX_ROSTER} Sworn</td>`;RC.appendChild(cap);
+  const SH=$('sShip');SH.innerHTML='';
+  Object.entries(SHIP).forEach(([k,v])=>{const lvl=G.ship[k];const maxed=lvl>=v.max;const cost=maxed?0:v.costs[lvl];const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b class="gold">${v.name}</b> <span class="tag">${lvl}/${v.max}</span><br><span class="dim">${v.desc}</span></td><td>${maxed?'—':cost}</td><td></td>`;
+    const b=document.createElement('button');b.textContent=maxed?'Max':'Refit';b.dataset.ship=k;b.disabled=maxed||G.req<cost;b.onclick=()=>{if(spend(cost)){G.ship[k]++;addLog(`Vigil-ship refit: ${v.name} upgraded.`);renderShop();}};tr.lastChild.appendChild(b);SH.appendChild(tr);});
+  $('sFallen').innerHTML=G.fallen.length?G.fallen.map(esc).join('<br>'):'No Sworn has fallen yet.';
+}
+$('btnShopDone').onclick=()=>{save();show('map');renderMap();};
+
+/* ================= INIT ================= */
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&B&&B.mode){B.mode=null;updateBattleUI();}if((e.key==='e'||e.key==='E')&&B&&B.phase==='player'&&!B.over&&$('battle').classList.contains('active'))enemyTurn();});
+refreshTitle();
+window.GC={get G(){return G;},get B(){return B;},FAST,battleClick,stats,canShoot,dist,bfs,pStats,alive,TS,hitChance};
+</script>
+</body>
+</html>
